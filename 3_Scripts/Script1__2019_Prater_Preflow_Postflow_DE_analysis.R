@@ -164,11 +164,6 @@ sample_distances <- dist(t(assay(rld)))
 Supp_Fig_1_C_hclust <- ggdendrogram(hclust(sample_distances), rotate = FALSE, segments = TRUE)
 Supp_Fig_1_B_C  <-  plot_grid(Supp_Fig_1_B, Supp_Fig_1_C_hclust, labels=c("B", "C"), ncol = 2, nrow = 1, scale = c(0.95, 0.95), rel_widths = c(1, 1))
 
-pdf(paste(Project, "_SuppFig1_PCA_Loadings_clustering_all_genes.pdf", sep=""),width=10,height=14)
-par(bg=NA)
-plot_grid(Supp_Fig_1_A_labs, Supp_Fig_1_B_C, labels=c("A", ""), ncol = 1, nrow = 2, rel_widths = c(1.2, 1))
-dev.off()
-
 
 message("+-------------------------------------------------------------------------------")
 message("+                                volcano plot                                   ")
@@ -199,12 +194,6 @@ colored <- ggplot(data, aes(x = lfc, y = pvalue)) +
   theme(text = element_text(size=elementTextSize)) 
 
 Fig_1_volcano <- colored + geom_text_repel(data=subset(data, abs(lfc) > 3 & padj < 0.00000001), mapping = aes(label = symbol), size = 4, color = 'black', box.padding = unit(0.3, "lines"), point.padding = unit(0.5, "lines"))
-
-pdf(paste("Fig_1b", "_preflow_postflow_volcano_plot_padj0.05", ".pdf", sep=""), width=7, height=7, onefile=FALSE)
-par(bg=NA)
-volcano_plot2
-dev.off()
-
 
 
 message("+-------------------------------------------------------------------------------")
@@ -263,10 +252,6 @@ p_kegg_mlt <- ggplot(enrichKegg_molten, aes(x=reorder(Description, -qvalue), y=v
   theme(legend.position = "none") +  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   scale_alpha_continuous( range = c(0.5, 1))
 
-pdf(paste("Fig_1c", "enrichKEGG_selected", "barplot20_padj0.05_l2fc0.6_MLT", ".pdf", sep="_"), onefile=FALSE, width=10, height=7) 
-par(bg=NA)
-p_kegg_mlt 
-dev.off()
 
 
 message("+-------------------------------------------------------------------------------")
@@ -375,9 +360,9 @@ p_cc <- ggplot(gse_CC_selected, aes(x=reorder(Description, -qvalues), y=gene_cou
 
 
 
-Fig_1AB_volcano <- plot_grid(Supp_Fig_1_A, Fig_1_volcano, labels=c("A", "B"),  ncol = 2, nrow = 1, scale = c(0.98, 0.98), rel_widths = c(1.25, 1), align="h")
+Fig_1AB_volcano <- plot_grid(Supp_Fig_1_A, Fig_1_volcano, labels=c("", ""),  ncol = 2, nrow = 1, scale = c(0.98, 0.98), rel_widths = c(1.25, 1), align="h")
 
-plot_GO_Kegg_2sided <- plot_grid(p_kegg_mlt, p_bp, p_mf, p_cc,  labels=c("C", "D", "E", "F"), align="hv", ncol = 2, nrow = 2, rel_heights = c(1, 1))
+plot_GO_Kegg_2sided <- plot_grid(p_kegg_mlt, p_bp, p_mf, p_cc,  labels=c("", "", "", ""), align="hv", ncol = 2, nrow = 2, rel_heights = c(1, 1))
 
 
 pdf(paste("Fig_1",Project, "2nd_1st_plac", "padj", significance,"l2fc1", "PCA_volcano_GSE_and_Kegg_barplots_2sidedxx", "alpha.pdf", sep="_"), onefile=FALSE, width=15, height=16) 

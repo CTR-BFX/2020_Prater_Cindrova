@@ -1,0 +1,6 @@
+ID,Description,GeneRatio,BgRatio,pvalue,p.adjust,qvalue,Count
+GO:0005788,endoplasmic reticulum lumen,74/2183,141/6642,9.43E-07,3.86E-05,5.28E-05,74
+GO:0071556,integral component of lumenal side of endoplasmic reticulum membrane,12/2183,17/6642,0.001616723,0.020786444,1.67E-02,12
+GO:0098553,lumenal side of endoplasmic reticulum membrane,12/2183,17/6642,0.001616723,0.020786444,1.67E-02,12
+hsa04141,Protein processing in endoplasmic reticulum,56/1690,165/7839,0.000290012,0.003652912,0.001289534,56
+,,,,,,,
