@@ -1,7 +1,7 @@
 ### RNA-Seq Analysis
 
 Paired-end sequencing was performed on Illumina NextSeq Direct High Output with read lengths of 100 bp. 
-QC of sequencing was assessed using FastQC, fastq_screen and Picard, summarised with MultiQC (v0.9dev VERSION). 
+QC of sequencing was assessed using FastQC, fastq_screen and Picard, summarised with MultiQC (v0.9dev). 
 Reads were trimmed with TrimGalore! and aligned to the human genome (GRCh38) with STAR aligner, with 91.2% reads uniquely mapped and mean of 53.4M paired reads/sample. 
 Gene quantification was determined with HTSeq-Counts (v0.6.1p1). 
 Additional quality control was performed with rRNA and mtRNA counts script. 
