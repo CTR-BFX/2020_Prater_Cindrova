@@ -34,3 +34,27 @@ Beta methylation values from the EPIC array range from 0 (unmethylated) to 1 (me
 
 EPIC methylation array data have been deposited in the ArrayExpress database at EMBL-EBI under accession number E-MTAB-XXXX (https://www.ebi.ac.uk/arrayexpress/experiments/E-MTABXXXX). 
 
+
+### Samples
+
+
+Sample	| Condition	| Age  |  Sample_ID
+-----   | -----     | -----| -----
+RHM063	| Preflow	| 7-8  | Preflow_1
+RHM064	| Preflow	| 7-8  | Preflow_2
+RHM065	| Preflow	| 7-8  | Preflow_3
+RHM066	| Preflow	| 7-8  | Preflow_4
+RHM067	| Preflow	| 7-8  | Preflow_5
+RHM068	| Preflow	| 7-8  | Preflow_6
+RHM069	| Preflow	| 7-8  | Preflow_7
+RHM070	| Preflow	| 7-8  | Preflow_8
+RHM071	| Postflow	| 13-14| Postflow_1
+RHM072	| Postflow	| 13-14| Postflow_2
+RHM073	| Postflow	| 13-14| Postflow_3
+RHM074	| Postflow	| 13-14| Postflow_4
+RHM075	| Postflow	| 13-14| Postflow_5
+RHM076	| Postflow	| 13-14| Postflow_6
+
+
+
+
