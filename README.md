@@ -37,8 +37,13 @@ EPIC methylation array data have been deposited in the ArrayExpress database at 
 
 ### Samples
 
+First and second trimester tissue samples were collected with informed written patient consent and approval of the Joint University College London/University College London Hospital Committees on the Ethics of Human Research (05/Q0505/82) from 7-8 wGA (n=8) and 13-14 wGA (n=6) uncomplicated pregnancies. 
+Gestational age was confirmed by ultrasound measurement of the crown-rump length of the embryo. All samples were collected from patients undergoing surgical pregnancy termination under general anaesthesia for psycho-social reasons. Villous samples were obtained under transabdominal ultrasound guidance from the central region of the placenta using a chorionic villus sampling (CVS) technique. All samples were snap-frozen immediately in liquid nitrogen and stored at −80 °C until analysis.
 
-Sample	| Condition	| Age  |  Sample_ID
+RNA was extracted from human first-trimester placental villi using the RNeasy Plus Universal Mini Kit (catalog no. 73404; Qiagen). Libraries were made using the Illumina TruSeq Stranded mRNA Library Kit according to the manufacturer’s instructions. Libraries were quantified (kappa qPCR), and equimolar pools were sequenced (paired end 100 base reads, PE100) in several lanes of the Illumina NextSeq. 
+
+
+Sample	| Condition	| Age (weeks) |  Sample_ID
 -----   | -----     | -----| -----
 RHM063	| Preflow	| 7-8  | Preflow_1
 RHM064	| Preflow	| 7-8  | Preflow_2
