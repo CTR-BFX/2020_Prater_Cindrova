@@ -1,0 +1,15 @@
+Sample,path,condition,col
+First_trimester_1,RHM063_CGATGT_L001_STAR.srt.bam_counts.srt.txt,First_trimester,col_1st
+First_trimester_2,RHM064_CAGATC_L001_STAR.srt.bam_counts.srt.txt,First_trimester,col_1st
+First_trimester_3,RHM065_GTGAAA_L001_STAR.srt.bam_counts.srt.txt,First_trimester,col_1st
+First_trimester_4,RHM066_CGATGT_L002_STAR.srt.bam_counts.srt.txt,First_trimester,col_1st
+First_trimester_5,RHM067_CAGATC_L002_STAR.srt.bam_counts.srt.txt,First_trimester,col_1st
+First_trimester_6,RHM068_GTGAAA_L002_STAR.srt.bam_counts.srt.txt,First_trimester,col_1st
+First_trimester_7,RHM069_CGATGT_L003_STAR.srt.bam_counts.srt.txt,First_trimester,col_1st
+First_trimester_8,RHM070_CAGATC_L003_STAR.srt.bam_counts.srt.txt,First_trimester,col_1st
+Second_trimester_1,RHM071_GTGAAA_L003_STAR.srt.bam_counts.srt.txt,Second_trimester,col_2nd
+Second_trimester_2,RHM072_CGATGT_L004_STAR.srt.bam_counts.srt.txt,Second_trimester,col_2nd
+Second_trimester_3,RHM073_CAGATC_L004_STAR.srt.bam_counts.srt.txt,Second_trimester,col_2nd
+Second_trimester_4,RHM074_GTGAAA_L004_STAR.srt.bam_counts.srt.txt,Second_trimester,col_2nd
+Second_trimester_5,RHM075_CGATGT_L005_STAR.srt.bam_counts.srt.txt,Second_trimester,col_2nd
+Second_trimester_6,RHM076_CAGATC_L005_STAR.srt.bam_counts.srt.txt,Second_trimester,col_2nd

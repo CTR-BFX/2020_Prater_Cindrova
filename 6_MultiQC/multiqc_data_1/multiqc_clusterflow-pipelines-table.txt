@@ -1,0 +1,20 @@
+Sample	Cluster Flow_pipeline_name	Cluster Flow_pipeline_start	Cluster Flow_genome	Cluster Flow_num_starting_files
+cf_fastq_kallisto_1463151720.0	fastq_kallisto	2016-05-13 16:02	GRCh38	4
+cf_fastq_kallisto_1463151780.0	fastq_kallisto	2016-05-13 16:03	GRCh38	6
+cf_fastq_kallisto_1463213280.0	fastq_kallisto	2016-05-14 09:08	GRCh38	8
+cf_fastq_kallisto_1463255280.0	fastq_kallisto	2016-05-14 20:48	GRCh38	10
+cf_htseq_counts_1502712271	htseq_counts	2017-08-14 13:04	GRCh38	1
+cf_htseq_counts_1502723772	htseq_counts	2017-08-14 16:16	GRCh38	4
+cf_htseq_counts_1502723782	htseq_counts	2017-08-14 16:16	GRCh38	3
+cf_htseq_counts_1502723788	htseq_counts	2017-08-14 16:16	GRCh38	4
+cf_htseq_counts_1502723793	htseq_counts	2017-08-14 16:16	GRCh38	3
+cf_htseq_counts_1502723802	htseq_counts	2017-08-14 16:16	GRCh38	3
+cf_htseq_counts_1502723811	htseq_counts	2017-08-14 16:16	GRCh38	2
+cf_htseq_counts_1502723823	htseq_counts	2017-08-14 16:17	GRCh38	4
+cf_htseq_counts_exon_1502799975	htseq_counts_exon	2017-08-15 13:26	GRCh38	16
+cf_htseq_counts_exon_1502804457	htseq_counts_exon	2017-08-15 14:40	GRCh38	5
+cf_htseq_counts_exon_1502804470	htseq_counts_exon	2017-08-15 14:41	GRCh38	5
+cf_htseq_counts_exon_1502804478	htseq_counts_exon	2017-08-15 14:41	GRCh38	4
+cf_kallisto_1463247480.0	kallisto	2016-05-14 18:38	GRCh38	10
+cf_kallisto_1463255220.0	kallisto	2016-05-14 20:47	GRCh38	8
+cf_qualimap_bamqc_1513786946	qualimap_bamqc	2017-12-20 16:22	GRCh38	2

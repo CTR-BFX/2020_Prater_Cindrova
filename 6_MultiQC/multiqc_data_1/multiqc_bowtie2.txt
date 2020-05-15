@@ -1,0 +1,3 @@
+Sample	total_reads	paired_total	paired_aligned_none	paired_aligned_one	paired_aligned_multi	paired_aligned_discord_one	paired_aligned_mate_none	paired_aligned_mate_one	paired_aligned_mate_multi	overall_alignment_rate	paired_aligned_mate_multi_halved	paired_aligned_mate_none_halved	paired_aligned_mate_one_halved
+KMABT2	15150638	15150638	1791979	2624026	10734633	66207	1974639	270686	1206219	93.48	603109.5	987319.5	135343.0
+bt.all	43410907	43410907	5031153	8122028	30257726	125089	7096875	665526	2049727	91.83	1024863.5	3548437.5	332763.0

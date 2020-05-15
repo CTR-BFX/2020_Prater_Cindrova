@@ -31,14 +31,16 @@ suppressPackageStartupMessages({
   library(enrichR)
 })
 
-Project       <- "CTR_gjb2_0001_STAR_DESeq2_shrinkage"
+Project       <- "CTR_gjb2_0001_STAR_DESeq2_shrinkage_BlockSex"
+#Project       <- "CTR_gjb2_0001_STAR_DESeq2_shrinkage"
 significance  <- 0.05
 l2fc          <- 1
 col_1st <- "firebrick2"
 col_2nd <- "steelblue3"
 
-Base.dir      <- "/Users/malwina/Documents/CTR-Groups/Graham_Burton/CTR_gjb2_0001/STAR"
+Base.dir      <- "/Users/malwina/Documents/CTR-Groups/Graham_Burton/CTR_gjb2_0001/STAR/"
 setwd(Base.dir)
+Res.dir      <- "/Users/malwina/Documents/CTR-Groups/Graham_Burton/CTR_gjb2_0001/STAR/BlockSex"
 
 message("+-------------------------------------------------------------------------------")
 message("+                       Prepare sample table                                    ")
@@ -48,6 +50,7 @@ sampleTable  <- read.csv("sampleTable.csv")
 sample_id    <- sampleTable$sample
 HTSeq.dir    <- paste(Base.dir,"/HTSEQ-COUNTS_CTR_gjb2_0001", sep="")
 list.files(HTSeq.dir)
+sampleTable$Sex <- c("male", "female", "female", "male","male",  "female", "female", "female", "male","male",   "female", "male","male","male")
 
 message("+-------------------------------------------------------------------------------")
 message("+                       Retrieve ensEMBL annotations                            ")
@@ -56,19 +59,28 @@ message("+----------------------------------------------------------------------
 ensembl    =  useEnsembl(biomart="ensembl", dataset="hsapiens_gene_ensembl")
 ensEMBL2id <- getBM(attributes=c('ensembl_gene_id', 'external_gene_name', 'entrezgene_id', 'description'), mart = ensembl)          
 ensEMBL2id_go <- getBM(attributes=c('ensembl_gene_id', 'external_gene_name', 'entrezgene_id', 'description', 'go_id', 'name_1006' ), mart = ensembl)    
+
+
 message("+-------------------------------------------------------------------------------")
 message("+ Create ddsHTSeq object")
 message("+-------------------------------------------------------------------------------")
 
-ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable=sampleTable, directory=HTSeq.dir, design= ~ condition)
+ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable=sampleTable, directory=HTSeq.dir, design= ~ Sex + condition)
+#ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable=sampleTable, directory=HTSeq.dir, design= ~ condition)
 dds <- DESeq(ddsHTSeq)
+
+setwd(Res.dir)
 
 message("+-------------------------------------------------------------------------------")
 message("+  Get the RESULTS    ")
 message("+-------------------------------------------------------------------------------")
 
+resultsNames(dds)
+
 res <- lfcShrink(dds, coef="condition_Second_trimester_vs_First_trimester", type="normal")
-res <-res[order(res$padj),]
+res <- res[order(res$padj),]
+res_sex <- lfcShrink(dds, coef="Sex_male_vs_female", type="normal")
+res_sex <- res_sex[order(res_sex$padj),]
 
 message("+-------------------------------------------------------------------------------")
 message("+ DESeq2 Results Tables")
@@ -85,11 +97,79 @@ results.df <- results.df[order(results.df$padj),]
 
 resSig.ann <- subset(results.df, padj < significance)
 resSig.ann <- resSig.ann[order(resSig.ann$padj),]
-write.csv(resSig.ann[order((resSig.ann$log2FoldChange), decreasing = TRUE),],   file=paste(Project, '_deseq2_DEGs_padj0.05.csv', sep=""))
+#write.csv(resSig.ann[order((resSig.ann$log2FoldChange), decreasing = TRUE),],   file=paste(Project, '_deseq2_DEGs_padj0.05.csv', sep=""))
+
+resSig.annl2fc1 <- subset(resSig.ann, abs(resSig.ann$log2FoldChange) > 1)
+#write.csv(resSig.annl2fc1[order((resSig.annl2fc1$log2FoldChange), decreasing = TRUE),],   file=paste(Project, '_deseq2_DEGs_l2fc1_padj0.05.csv', sep=""))
 
 resdata <- merge(as.data.frame(res), as.data.frame(counts(dds,normalized=T)), by='row.names',sort=F)
 names(resdata)[1] <- 'ensembl_gene_id'
 resdata_ann <- merge(resdata, ensEMBL2id[,c(1:3)], by.x= "ensembl_gene_id")
+#write.csv(resdata_ann,   file=paste(Project, '_deseq2_resdata_ann.csv', sep=""))
+
+write.csv(results.df,   file=paste(Project, '_deseq2_results.csv', sep=""), quote = FALSE)
+
+counts_norm <- counts(dds, normalized=TRUE)
+dim(counts_norm)
+write.csv(counts_norm,   file=paste(Project, '_deseq2_counts_norm.csv', sep=""), quote = FALSE)
+
+
+message("+-------------------------------------------------------------------------------")
+message("+                           add fold change values                              ")
+message("+-------------------------------------------------------------------------------")
+
+resSig.annl2fc1 <- read.csv("CTR_gjb2_0001_STAR_DESeq2_shrinkage_BlockSex_deseq2_DEGs_l2fc1_padj0.05.csv")
+resSig.annl2fc1$FoldChange <-  2^resSig.annl2fc1$log2FoldChange
+
+resSig.annl2fc1$FC<-2^(abs(resSig.annl2fc1$log2FoldChange)) 
+#change the sign of FC according to log2FC
+resSig.annl2fc1$FC<-ifelse(resSig.annl2fc1$log2FoldChange<0,resSig.annl2fc1$FC*(-1),resSig.annl2fc1$FC*1) 
+
+resSig.ann <- read.csv("CTR_gjb2_0001_STAR_DESeq2_shrinkage_BlockSex_deseq2_DEGs_padj0.05.csv")
+
+resdata_ann <- read.csv("CTR_gjb2_0001_STAR_DESeq2_shrinkage_BlockSex_deseq2_resdata_ann.csv")
+
+message("+-------------------------------------------------------------------------------")
+message("+ Now creating gene plots.")
+message("+-------------------------------------------------------------------------------")
+
+elementTextSize <- 8
+
+makeGeneCountPlot <- function(gene2plot,outdir) {
+  if(missing(outdir)){ outdir = "" }
+  else( outdir <- paste(outdir, "/", sep=""))
+  genename2plot <- ensEMBL2id[ensEMBL2id$ensembl_gene_id == gene2plot, ]$external_gene_name
+  t2            <- plotCounts(dds, gene=gene2plot, intgroup=c("condition"), normalized=TRUE, returnData=TRUE)
+  #pdf(paste(outdir, Project, "-DGE_", gene2plot, "_collated.pdf", sep=""),width=10,height=7, onefile=FALSE)
+  #par(bg=NA)
+  #print({
+  #  ggplot(t2, aes(x=condition, y=count, fill=condition)) + geom_violin(trim=TRUE, alpha=.75)  + geom_boxplot(width = 0.1, fill='white') + 
+  #    geom_point(position=position_jitter(w=0.1,h=0), alpha=0.25) +
+  #    ggtitle(paste("CTR_mz205_0001 ::: ", gene2plot, " ::: ", genename2plot, sep="")) + ylab("Normalised count") +
+  #    scale_fill_manual(values = c(col_1st, col_2nd)) + theme(text = element_text(size=elementTextSize), legend.position="none") })
+  #dev.off()
+  
+  t2$samples    <- rownames(t2)
+  pdf(paste(outdir, Project, "-DGE_", gene2plot, "_individual.pdf", sep=""),width=10,height=7, onefile=FALSE)
+  par(bg=NA)
+  print({ ggplot(t2, aes(x=samples, y=count, fill=condition)) + geom_bar(stat="identity", alpha=.75) + 
+      scale_fill_manual(values = c("green4","skyblue2",  "blue4", "#5f022f", "violetred", "olivedrab", "cornflowerblue", "blue")) +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1)) + ggtitle(paste("CTR_mz205_0001 ::: ", gene2plot, " ::: ", genename2plot, sep="")) })
+  dev.off()
+  print(paste("Created plot for", gene2plot), sep=" ")
+}
+
+makeGeneCountPlot('ENSG00000087245')
+makeGeneCountPlot('ENSG00000118113')
+makeGeneCountPlot('ENSG00000125084')
+makeGeneCountPlot('ENSG00000158955')
+makeGeneCountPlot('ENSG00000154764')
+makeGeneCountPlot('ENSG00000260135')
+makeGeneCountPlot('ENSG00000135925')
+makeGeneCountPlot('ENSG00000128313')
+makeGeneCountPlot('ENSG00000118137')
+makeGeneCountPlot('')
+
 
 
 message("+-------------------------------------------------------------------------------")
@@ -97,6 +177,11 @@ message("+ Run transformations")
 message("+-------------------------------------------------------------------------------")
 
 rld <- DESeq2::rlogTransformation(dds, blind=T)
+#saveRDS(rld, "rld_df_BlockSex.rds")
+
+rld <- readRDS("rds_BlockSex/rld_df_BlockSex.rds")
+
+
 
 message("+-------------------------------------------------------------------------------")
 message("+ Create PCA Plots")
@@ -116,14 +201,16 @@ sampleTable$Sample_short <- sampleTable$Sample
 sampleTable$Sample_short <- gsub("First_trimester","FT",sampleTable$Sample_short)
 sampleTable$Sample_short <- gsub("Second_trimester","ST",sampleTable$Sample_short)
 
-Supp_Fig_1_A <- ggplot(scores, aes(x = PC1, y = PC2, col = (factor(sampleTable$condition)) )) + 
+Supp_Fig_1_A <- ggplot(scores, aes(x = PC1, y = PC2, col = (factor(sampleTable$condition)), shape = (factor(sampleTable$Sex)) )) + 
   geom_point(size = 5 ) + 
   xlab(pc1lab) + ylab(pc2lab) + 
-  geom_encircle(alpha = 0.1, show.legend = FALSE, aes(fill=condition)) + 
-  scale_fill_manual(name="Stage", values = c(col_1st, col_2nd)) +
+  #geom_encircle(alpha = 0.1, show.legend = FALSE, aes(fill=condition)) + 
+  scale_shape_manual(name="Sex", values = c(1,2)) +
   scale_colour_manual(name="Stage", values = c(col_1st, col_2nd)) +
+  scale_fill_manual(name="Stage", values = c(col_1st, col_2nd)) +
   theme(text = element_text(size=elementTextSize)) + 
-  theme(axis.text=element_text(size=14),axis.title=element_text(size=14))
+  theme(axis.text=element_text(size=14),axis.title=element_text(size=14))+
+  coord_fixed(ratio = 1, xlim = c(-60,60), ylim = c(-60,60), expand = TRUE, clip = "on")
 
 Supp_Fig_1_A_labs <- ggplot(scores, aes(x = PC1, y = PC2, col = (factor(sampleTable$condition)) )) + 
   geom_point(size = 5 ) + geom_text_repel(aes(label=sampleTable$Sample_short), col = "black") +
@@ -133,6 +220,18 @@ Supp_Fig_1_A_labs <- ggplot(scores, aes(x = PC1, y = PC2, col = (factor(sampleTa
   scale_colour_manual(name="Stage", values = c(col_1st, col_2nd)) +
   theme(text = element_text(size=elementTextSize)) + 
   coord_fixed(ratio = 1, xlim = c(-60,60), ylim = c(-60,60), expand = TRUE, clip = "on")
+
+Supp_Fig_1_A_labsx <- ggplot(scores, aes(x = PC1, y = PC2, col = (factor(sampleTable$condition)), shape = (factor(sampleTable$Sex)) )) + 
+  geom_point(size = 5 ) + 
+  xlab(pc1lab) + ylab(pc2lab) + 
+  scale_colour_manual(name="Stage", values = c(col_1st, col_2nd)) +
+  scale_fill_manual(name="Stage", values = c(col_1st, col_2nd)) +
+  geom_encircle(alpha = 0.1, show.legend = FALSE,  aes(fill=col)) + 
+  scale_shape_manual(name="Sex", values = c(1,2),) +
+  theme(text = element_text(size=elementTextSize)) + 
+  theme(axis.text=element_text(size=14),axis.title=element_text(size=14))+
+  coord_fixed(ratio = 1, xlim = c(-60,60), ylim = c(-60,60), expand = TRUE, clip = "on")+
+  geom_text_repel(aes(label=sampleTable$Sample_short), col = "black") 
 
 
 message("+-------------------------------------------------------------------------------")
@@ -155,6 +254,12 @@ pca.2.25.plot <- ggplot(data=pca.2.25, aes(x=factor(pca.2.25$external_gene_name,
 
 Supp_Fig_1_B <- plot_grid(pca.1.25.plot, pca.2.25.plot, labels=c(" ", " "), ncol = 1, nrow = 2)
 
+pdf(paste("SupplFig_1", Project, "2nd_1st_plac", "PCA_withSex", ".pdf", sep="_"), onefile=FALSE, width=7, height=7) 
+par(bg=NA)
+Supp_Fig_1_A_labsx
+dev.off()
+
+
 
 message("+-------------------------------------------------------------------------------")
 message("+       Hierarchical clustering        ")
@@ -165,11 +270,23 @@ Supp_Fig_1_C_hclust <- ggdendrogram(hclust(sample_distances), rotate = FALSE, se
 Supp_Fig_1_B_C  <-  plot_grid(Supp_Fig_1_B, Supp_Fig_1_C_hclust, labels=c("B", "C"), ncol = 2, nrow = 1, scale = c(0.95, 0.95), rel_widths = c(1, 1))
 
 
+
+
+
+pdf(paste("SupplFig_1", Project, "2nd_1st_plac", "PCA_loadings_HC", ".pdf", sep="_"), onefile=FALSE, width=10, height=15) 
+par(bg=NA)
+plot_grid(Supp_Fig_1_A_labsx, Supp_Fig_1_B_C, labels=c(" ", " "), align="hv", ncol = 1, nrow = 2, scale = 0.95, rel_heights = c(1, 1))
+dev.off()
+
+
+
 message("+-------------------------------------------------------------------------------")
 message("+                                volcano plot                                   ")
 message("+-------------------------------------------------------------------------------")
 #  2nd: "steelblue3"
 #  1st: "firebrick2"
+
+#resdata_ann
 
 data <- data.frame(gene = results.df$ensembl_gene_id,
                    symbol = results.df$external_gene_name,
@@ -187,13 +304,19 @@ colored <- ggplot(data, aes(x = lfc, y = pvalue)) +
   scale_x_continuous( limits = c(-9, 9)) + theme(legend.position = "none") + 
   xlab(expression(log[2]("First_trimester" / "Second_trimester"))) + 
   ylab(expression(-log[10]("adjusted p-value"))) +   ggtitle(label = "" , subtitle = "") +  
-  geom_vline(xintercept = 0, colour = "black") +  geom_hline(yintercept = 1.3, colour = "black") + 
+  geom_vline(xintercept = -1, colour = "black",linetype="dotted") +  geom_vline(xintercept = 1, colour = "black",linetype="dotted") + geom_hline(yintercept = 1.3, colour = "black",linetype="dotted") + 
   annotate(geom = "text", label = "First trimester", x = -4, y = 55, size = 7, colour = "black") + 
-  annotate(geom = "text", label = "Second trimester", x = 4, y = 55, size = 7, colour = "black") + 
+  annotate(geom = "text", label = "Second trimester", x = 4.5, y = 55, size = 7, colour = "black") + 
   scale_color_manual(values = c("Second_trimester" = col_2nd, "First_trimester" = col_1st, "none" = "#636363")) +  
   theme(text = element_text(size=elementTextSize)) 
 
 Fig_1_volcano <- colored + geom_text_repel(data=subset(data, abs(lfc) > 3 & padj < 0.00000001), mapping = aes(label = symbol), size = 4, color = 'black', box.padding = unit(0.3, "lines"), point.padding = unit(0.5, "lines"))
+#Fig_1_volcano <- colored + geom_text_repel(data=subset(data, abs(lfc) > 3 & padj < 0.0000001), mapping = aes(label = symbol), size = 4, color = 'black', box.padding = unit(0.3, "lines"), point.padding = unit(0.5, "lines"))
+
+pdf(paste("Fig_1_volcano",Project, "2nd_1st_plac", "padj", significance,"l2fc1", "alpha.pdf", sep="_"), onefile=FALSE, width=7, height=6) 
+par(bg=NA)
+Fig_1_volcano
+dev.off()
 
 
 message("+-------------------------------------------------------------------------------")
@@ -202,7 +325,7 @@ message("+----------------------------------------------------------------------
 
 RESULTS_1 <- subset(results.df, abs(results.df$log2FoldChange) > l2fc & results.df$padj < significance)
 RESULTS_0.6 <- subset(results.df, abs(results.df$log2FoldChange) > 0.6 & results.df$padj < significance)
-resdata_simplified <- resdata_ann
+resdata_simplified <- resdata_ann[,-1]
 resdata_simplified$mean_1st <- rowMeans(resdata_simplified[,c(8:15)])
 resdata_simplified$mean_2nd <- rowMeans(resdata_simplified[,c(16:21)])
 resdata_simplified <- resdata_simplified[,c(1,2,3,7,22:25)]
@@ -227,8 +350,9 @@ kk2 <- setReadable(kk, OrgDb = org.Hs.eg.db, keyType = "ENTREZID")
 kk_results <- as.data.frame(kk2)
 keggresids = kk_results$ID
 
-selected_kegg <- c("hsa04514" ,"hsa04060", "hsa04022",  "hsa04015", "hsa04141", "hsa04913", "hsa04921", "hsa04062", "hsa04350", "hsa04270", "hsa04010","hsa04911" ,"hsa03320" ,"hsa04918" ,"hsa00510",  "hsa04923", "hsa02010", "hsa04310", "hsa04141", "hsa04151")
-
+#selected_kegg <- c("hsa04514" ,"hsa04060", "hsa04022",  "hsa04015", "hsa04141", "hsa04913", "hsa04921", "hsa04062", "hsa04350", "hsa04270", "hsa04010","hsa04911" ,"hsa03320" ,"hsa04918" ,"hsa00510",  "hsa04923", "hsa02010", "hsa04310", "hsa04141", "hsa04151")
+selected_kegg <- c("hsa04514" ,"hsa04060", "hsa04022",  "hsa04015", "hsa04141", "hsa04913", "hsa04921", "hsa04062", "hsa04350", "hsa04270", "hsa04010","hsa04911" ,"hsa03320" ,"hsa04918" ,"hsa00510",  "hsa04923", "hsa02010", "hsa04310", "hsa04141", "hsa04151", "hsa04072","hsa04020", "hsa04929")   
+  
 enrichKegg_selected <- kk_results[kk_results$ID %in% selected_kegg,]
 enrichKegg_selected$Description <- gsub("endoplasmic reticulum", "ER"  , enrichKegg_selected$Description)
 
@@ -253,6 +377,9 @@ p_kegg_mlt <- ggplot(enrichKegg_molten, aes(x=reorder(Description, -qvalue), y=v
   scale_alpha_continuous( range = c(0.5, 1))
 
 
+p_kegg_mlt
+
+
 
 message("+-------------------------------------------------------------------------------")
 message("+                              Cluster profiler                                 ")
@@ -267,9 +394,9 @@ geneList <- sort(geneList, decreasing = T )
 gene <- names(geneList)[abs(geneList) > 1]
 
 # GSEA = gene set enrichment analysis
-gsego_cc <- gseGO(geneList = geneList, OrgDb= org.Hs.eg.db, ont = "CC", nPerm= 1000, minGSSize  = 100, maxGSSize = 500, pvalueCutoff = 0.05, verbose = FALSE)
-gsego_bp <- gseGO(geneList = geneList, OrgDb= org.Hs.eg.db, ont = "BP", nPerm= 1000, minGSSize  = 100, maxGSSize = 500, pvalueCutoff = 0.05, verbose = FALSE)
-gsego_mf <- gseGO(geneList = geneList, OrgDb= org.Hs.eg.db, ont = "MF", nPerm= 1000, minGSSize  = 100, maxGSSize = 500, pvalueCutoff = 0.05, verbose = FALSE)
+gsego_cc <- gseGO(geneList = geneList, OrgDb= org.Hs.eg.db, ont = "CC", nPerm= 1000, minGSSize  = 20, maxGSSize = 500, pvalueCutoff = 0.05, verbose = FALSE)
+gsego_bp <- gseGO(geneList = geneList, OrgDb= org.Hs.eg.db, ont = "BP", nPerm= 1000, minGSSize  = 20, maxGSSize = 500, pvalueCutoff = 0.05, verbose = FALSE)
+gsego_mf <- gseGO(geneList = geneList, OrgDb= org.Hs.eg.db, ont = "MF", nPerm= 1000, minGSSize  = 20, maxGSSize = 500, pvalueCutoff = 0.05, verbose = FALSE)
 gsecc_df <- as.data.frame(gsego_cc)
 gsebp_df <- as.data.frame(gsego_bp)
 gsemf_df <- as.data.frame(gsego_mf)
@@ -279,27 +406,50 @@ ego_bp <- enrichGO(gene = gene, universe = bkcg_genes, OrgDb = org.Hs.eg.db, ont
 ego_mf <- enrichGO(gene = gene, universe = bkcg_genes, OrgDb = org.Hs.eg.db, ont = "MF",  pAdjustMethod = "BH", pvalueCutoff  = 0.05, qvalueCutoff  = 0.05, readable      = TRUE)
 ego_cc <- enrichGO(gene = gene, universe = bkcg_genes, OrgDb = org.Hs.eg.db, ont = "CC",  pAdjustMethod = "BH", pvalueCutoff  = 0.05, qvalueCutoff  = 0.05, readable      = TRUE)
 ego <- rbind(as.data.frame(ego_bp), as.data.frame(ego_cc), as.data.frame(ego_mf) )
+egocc_df <- as.data.frame(ego_cc)
+egobp_df <- as.data.frame(ego_bp)
+egomf_df <- as.data.frame(ego_mf)
+
+
+#write.csv(egocc_df, "CTR_gjb2_0001_egocc_df_BlockSex.csv")
+#write.csv(egobp_df, "CTR_gjb2_0001_egobp_df_BlockSex.csv")
+#write.csv(egomf_df, "CTR_gjb2_0001_egomf_df_BlockSex.csv")
 
 message("+-------------------------------------------------------------------------------")
 message("+                              Plot gse   results                               ")
 message("+-------------------------------------------------------------------------------")
-
-gsebp_selected_terms <-  c("ER to Golgi vesicle-mediated transport", "response to endoplasmic reticulum stress", "ncRNA processing",
+# 15 --> 21:   "regulation of GTPase activity", "positive regulation of cell adhesion", "regulation of cytosolic calcium ion concentration", "response to oxidative stress", "immune response-regulating cell surface receptor signaling pathway",  "extracellular matrix organization"     ,,,,, "regulated exocytosis",
+gsebp_selected_terms <-  c("ER to Golgi vesicle-mediated transport", "response to endoplasmic reticulum stress", "cytokine-mediated signaling pathway",
                            "adaptive immune response", "regulation of vasculature development", "cellular response to oxygen-containing compound", 
-                           "leukocyte chemotaxis", "G protein-coupled receptor signaling pathway", "positive regulation of ERK1 and ERK2 cascade", 
-                           "positive regulation of MAPK cascade", "cellular response to lipid", "cytokine secretion", 
-                           "positive regulation of protein secretion", "regulation of transmembrane transport", "Golgi vesicle transport",
-                           "carboxylic acid transport", "regulation of Wnt signaling pathway", "cytokine-mediated signaling pathway") 
-gsemf_selected_terms <-  c("molecular transducer activity","signaling receptor activity" , "transmembrane signaling receptor activity" , 
-                           "calcium ion binding" , "receptor regulator activity" ,"receptor ligand activity", "channel activity" , 
-                           "passive transmembrane transporter activity" , "substrate-specific channel activity" , "gated channel activity" ,
-                           "cation channel activity" , "ion gated channel activity" , "G protein-coupled receptor activity" ,
-                           "G protein-coupled receptor binding", "cytokine receptor binding" , "glycosaminoglycan binding" ,"sulfur compound binding",
-                           "metal ion transmembrane transporter activity")
-gsecc_selected_terms <- c("secretory vesicle","secretory granule" , "vesicle membrane" , "cell surface" ,"cytoplasmic vesicle membrane" ,"plasma membrane protein complex",
-                          "extracellular matrix" ,  "side of membrane"  , "collagen-containing extracellular matrix", "secretory granule membrane"  , 
-                          "external side of plasma membrane" ,"transporter complex", "transmembrane transporter complex" ,  "ion channel complex" ,
-                          "synapse part" , "mitochondrial protein complex" , "receptor complex" , "endocytic vesicle" )     
+                           "G protein-coupled receptor signaling pathway", "positive regulation of ERK1 and ERK2 cascade",  "carboxylic acid transport",
+                           "positive regulation of MAPK cascade", "cellular response to lipid", "calcium ion transport", 
+                           "positive regulation of peptide secretion", "regulation of transmembrane transport", "Golgi vesicle transport",  "regulation of GTPase activity", "positive regulation of cell adhesion", "regulation of cytosolic calcium ion concentration", "response to oxidative stress", "immune response-activating signal transduction",  "extracellular matrix organization", "IRE1-mediated unfolded protein response", "endoplasmic reticulum unfolded protein response", "regulation of complement activation") 
+# 10
+gsemf_selected_terms <-  c("molecular transducer activity", "signaling receptor activity", "transmembrane signaling receptor activity" , "calcium ion binding" ,
+                            "receptor ligand activity","substrate-specific channel activity" , "receptor regulator activity" ,              
+                            "passive transmembrane transporter activity", "cation channel activity","G protein-coupled receptor activity")
+# 10
+gsecc_selected_terms <- c("secretory vesicle", "cell surface" ,"vesicle membrane" , "transmembrane transporter complex", "external side of plasma membrane","ion channel complex" ,
+                          "secretory granule membrane", "transporter complex", "collagen-containing extracellular matrix" ,"plasma membrane protein complex"  )     
+
+
+
+#gsebp_selected_terms <-  c("ER to Golgi vesicle-mediated transport", "response to endoplasmic reticulum stress", "ncRNA processing",
+#                           "adaptive immune response", "regulation of vasculature development", "cellular response to oxygen-containing compound", 
+#                           "leukocyte chemotaxis", "G protein-coupled receptor signaling pathway", "positive regulation of ERK1 and ERK2 cascade", 
+#                           "positive regulation of MAPK cascade", "cellular response to lipid", "cytokine secretion", 
+#                           "positive regulation of protein secretion", "regulation of transmembrane transport", "Golgi vesicle transport",
+#                           "carboxylic acid transport", "regulation of Wnt signaling pathway", "cytokine-mediated signaling pathway") 
+#gsemf_selected_terms <-  c("molecular transducer activity","signaling receptor activity" , "transmembrane signaling receptor activity" , 
+#                           "calcium ion binding" , "receptor regulator activity" ,"receptor ligand activity", "channel activity" , 
+#                           "passive transmembrane transporter activity" , "substrate-specific channel activity" , "gated channel activity" ,
+#                           "cation channel activity" , "ion gated channel activity" , "G protein-coupled receptor activity" ,
+#                           "G protein-coupled receptor binding", "cytokine receptor binding" , "glycosaminoglycan binding" ,"sulfur compound binding",
+#                           "metal ion transmembrane transporter activity")
+#gsecc_selected_terms <- c("secretory vesicle","secretory granule" , "vesicle membrane" , "cell surface" ,"cytoplasmic vesicle membrane" ,"plasma membrane protein complex",
+#                          "extracellular matrix" ,  "side of membrane"  , "collagen-containing extracellular matrix", "secretory granule membrane"  , 
+#                          "external side of plasma membrane" ,"transporter complex", "transmembrane transporter complex" ,  "ion channel complex" ,
+#                          "synapse part" , "mitochondrial protein complex" , "receptor complex" , "endocytic vesicle" )     
 
 
 gse_BP_selected <- gsebp_df[gsebp_df$Description %in% gsebp_selected_terms,]
@@ -307,10 +457,11 @@ gse_BP_selected$Description <- gsub("G protein-coupled receptor", "GPCR" , gse_B
 gse_BP_selected$Description <- gsub("regulation", "reg." , gse_BP_selected$Description)
 gse_BP_selected$Description <- gsub("oxygen", "O2" , gse_BP_selected$Description)
 gse_BP_selected$Description <- gsub("nucleotide", "nt" , gse_BP_selected$Description)
-gse_BP_selected$Description <- gsub("cellular", "*" , gse_BP_selected$Description)
+#gse_BP_selected$Description <- gsub("cellular", "" , gse_BP_selected$Description)
 gse_BP_selected$Description <- gsub("signaling pathway", "signaling" , gse_BP_selected$Description)
 gse_BP_selected$Description <- gsub("growth factor stimulus", "growth factor" , gse_BP_selected$Description)
 gse_BP_selected$Description <- gsub("endoplasmic reticulum", "ER" , gse_BP_selected$Description)
+gse_BP_selected$Description <- gsub("immune response-activating signal transduction", "immune response-activ. signal transduction" , gse_BP_selected$Description)
 
 gene_counts <- strsplit(gse_BP_selected$core_enrichment, split = "/")
 gene_counts_list <- list()
@@ -362,13 +513,24 @@ p_cc <- ggplot(gse_CC_selected, aes(x=reorder(Description, -qvalues), y=gene_cou
 
 Fig_1AB_volcano <- plot_grid(Supp_Fig_1_A, Fig_1_volcano, labels=c("", ""),  ncol = 2, nrow = 1, scale = c(0.98, 0.98), rel_widths = c(1.25, 1), align="h")
 
-plot_GO_Kegg_2sided <- plot_grid(p_kegg_mlt, p_bp, p_mf, p_cc,  labels=c("", "", "", ""), align="hv", ncol = 2, nrow = 2, rel_heights = c(1, 1))
+#plot_GO_Kegg_2sided <- plot_grid(p_kegg_mlt, p_bp, p_mf, p_cc,  labels=c("", "", "", ""), align="hv", ncol = 2, nrow = 2, rel_heights = c(1, 1))
+plot_GO_Kegg_2sided <- plot_grid(p_kegg_mlt, p_bp, p_mf, p_cc,  labels=c("", "", "", ""), align="hv", ncol = 2, nrow = 2, rel_heights = c(1, 0.6))
 
 
-pdf(paste("Fig_1",Project, "2nd_1st_plac", "padj", significance,"l2fc1", "PCA_volcano_GSE_and_Kegg_barplots_2sidedxx", "alpha.pdf", sep="_"), onefile=FALSE, width=15, height=16) 
+
+#pdf(paste("Fig_1",Project, "2nd_1st_plac", "padj", significance,"l2fc1", "PCA_volcano_GSE_and_Kegg_barplots_2sided", "alpha.pdf", sep="_"), onefile=FALSE, width=15, height=16) 
+pdf(paste("Fig_1",Project, "2nd_1st_plac", "padj", significance,"l2fc1", "PCA_volcano_GSE_and_Kegg_barplots_2sided", "alpha.pdf", sep="_"), onefile=FALSE, width=15, height=16) 
 par(bg=NA)
 plot_grid(Fig_1AB_volcano, plot_GO_Kegg_2sided, labels=c(" ", " "), align="hv", ncol = 1, nrow = 2, scale = 0.95, rel_heights = c(1, 1.4))
 dev.off()
+
+
+#pdf(paste("Fig_1",Project, "2nd_1st_plac", "padj", significance,"l2fc1", "PCA_volcano_GSE_and_Kegg_barplots_2sided", "alpha.pdf", sep="_"), onefile=FALSE, width=15, height=16) 
+pdf(paste("Fig_1cdef",Project, "2nd_1st_plac", "padj", significance,"l2fc1", "_GSE_and_Kegg_barplots_2sided", "alpha.pdf", sep="_"), onefile=FALSE, width=15, height=9) 
+par(bg=NA)
+plot_GO_Kegg_2sided
+dev.off()
+
 
 
 message("+-------------------------------------------------------------------------------")
@@ -389,6 +551,7 @@ results_transport <-  na.omit(unique(results.df[results.df$ensembl_gene_id %in% 
 results_transport <- results_transport[order(results_transport$log2FoldChange),]
 saveRDS(results_transport$external_gene_name, "All_Transport_GO_genes.rds")
 
+
 data <- data.frame(gene = results_transport$ensembl_gene_id,
                    symbol = results_transport$external_gene_name,
                    padj = results_transport$padj,
@@ -404,8 +567,8 @@ colored <- ggplot(data, aes(x = lfc, y = pvalue)) +
   ggtitle(label = "" , subtitle = "") +  
   xlab(expression(log[2]("First_trimester" / "Second_trimester"))) +  ylab(expression(-log[10]("adjusted p-value"))) + 
   geom_vline(xintercept = 0, colour = "black") +  geom_hline(yintercept = 1.3, colour = "black") + 
-  annotate(geom = "text", label = "First trimester", x = -4, y = 30, size = 6, colour = "black") + 
-  annotate(geom = "text", label = "Second trimester", x = 3, y = 30, size = 6, colour = "black") + 
+  annotate(geom = "text", label = "First trimester", x = -4, y = 33, size = 6, colour = "black") + 
+  annotate(geom = "text", label = "Second trimester", x = 3, y = 33, size = 6, colour = "black") + 
   scale_color_manual(values = c("Second_trimester" = col_2nd, "First_trimester" = col_1st, "none" = "#636363")) + 
   theme(text = element_text(size=elementTextSize)) 
 
@@ -415,6 +578,14 @@ pdf(paste("Fig_4_", "volcano_plot_TRANSPORT", ".pdf", sep=""), width=7, height=7
 par(bg=NA)
 Fig_4_volcano
 dev.off()
+
+
+
+ensEMBL2id_go_lipid_transport <- subset(ensEMBL2id_go_transport, ensEMBL2id_go_transport$lipid_transport == TRUE)
+results_lipid_transport <-  na.omit(unique(results.df[results.df$ensembl_gene_id %in% ensEMBL2id_go_lipid_transport$ensembl_gene_id, ])) 
+results_lipid_transport <- results_lipid_transport[order(results_lipid_transport$log2FoldChange),]
+saveRDS(results_lipid_transport$external_gene_name, "Lipid_Transport_GO_genes.rds")
+
 
 
 message("+-------------------------------------------------------------------------------")
@@ -448,8 +619,8 @@ colored <- ggplot(data, aes(x = lfc, y = pvalue)) +
   ggtitle(label = "" , subtitle = "") +  
   xlab(expression(log[2]("First_trimester" / "Second_trimester"))) + ylab(expression(-log[10]("adjusted p-value"))) + 
   geom_vline(xintercept = 0, colour = "black") +  geom_hline(yintercept = 1.3, colour = "black") + 
-  annotate(geom = "text", label = "First trimester", x = -3, y = 35, size = 6, colour = "black") + 
-  annotate(geom = "text", label = "Second trimester", x = 3, y = 35, size = 6, colour = "black") + 
+  annotate(geom = "text", label = "First trimester", x = -3, y = 30, size = 6, colour = "black") + 
+  annotate(geom = "text", label = "Second trimester", x = 3, y = 30, size = 6, colour = "black") + 
   scale_color_manual(values = c("Second_trimester" = col_2nd, "First_trimester" = col_1st, "none" = "#636363")) +  
   theme(text = element_text(size=elementTextSize)) 
 
@@ -492,8 +663,8 @@ colored <- ggplot(data, aes(x = lfc, y = pvalue)) +   geom_point(aes(color = fac
   scale_x_continuous( limits = c(-4, 4)) +  theme(legend.position = "none") +  ggtitle(label = "" , subtitle = "") +  
   xlab(expression(log[2]("First_trimester" / "Second_trimester"))) +  ylab(expression(-log[10]("adjusted p-value"))) + 
   geom_vline(xintercept = 0, colour = "black") + geom_hline(yintercept = 1.3, colour = "black") + 
-  annotate(geom = "text", label = "First trimester", x = -3, y = 22, size = 6, colour = "black") + 
-  annotate(geom = "text", label = "Second trimester", x = 3, y = 22, size = 6, colour = "black") + 
+  annotate(geom = "text", label = "First trimester", x = -3, y = 15, size = 6, colour = "black") + 
+  annotate(geom = "text", label = "Second trimester", x = 3, y = 15, size = 6, colour = "black") + 
   scale_color_manual(values = c("Second_trimester" = col_2nd, "First_trimester" = col_1st, "none" = "#636363")) +  
   theme(text = element_text(size=elementTextSize)) 
 
@@ -534,7 +705,7 @@ ego_terms_go_secretion$secretion <- grepl("secret", ego_terms_go_secretion$name_
 ego_terms_go_secretion <- subset(ego_terms_go_secretion, ego_terms_go_secretion$secretion == TRUE)
 selected_genes2 <- resSig.ann[resSig.ann$external_gene_name %in% ego_terms_go_secretion$external_gene_name,]
 selected_genes2 <- subset(selected_genes2, abs(selected_genes2$log2FoldChange) > 0.6)
-#saveRDS(selected_genes2$external_gene_name, "secretory_genes_ego.rds")
+#saveRDS(selected_genes2$external_gene_name, "secretory_genes_ego_BlockSex.rds")
 
 
 message("+-------------------------------------------------------------------------------")
@@ -549,8 +720,8 @@ oxy_genes <- as.character(unlist(ego_terms_go_Oxy$geneID))
 oxy_genes    <- strsplit(oxy_genes, ("/"))
 oxy_genes <- unique(unlist(oxy_genes))
 selected_genes <- resSig.ann[resSig.ann$external_gene_name %in% oxy_genes,]
-selected_genes <- subset(selected_genes, abs(selected_genes$log2FoldChange) > 1)
-#saveRDS(selected_genes$external_gene_name, "oxy_genes_ego.rds")
+selected_genes <- subset(selected_genes, abs(selected_genes$log2FoldChange) > 0.6)
+#saveRDS(selected_genes$external_gene_name, "oxy_genes_ego_BlockSex.rds")
 
 message("+-------------------------------------------------------------------------------")
 message("+             Fig. TFs :                                            ")
@@ -560,20 +731,20 @@ TF_db <- read.csv("/Users/malwina/Documents/CTR-Groups/Graham_Burton/2019_11_07_
 TF_genes <- resSig.ann[resSig.ann$external_gene_name %in% TF_db$Gene_Name,]
 TF_genes <- subset(TF_genes, abs(TF_genes$log2FoldChange) > 0.6)
 as.character(TF_genes$external_gene_name)
-#saveRDS(TF_genes$external_gene_name, "TF_genes_tf_checkpoint_db.rds")
+#saveRDS(TF_genes$external_gene_name, "TF_genes_tf_checkpoint_db_BlockSex.rds")
 
 
 message("+-------------------------------------------------------------------------------")
 message("+              Fig.4e- ECM related genes                                            ")
 message("+-------------------------------------------------------------------------------")
 
-Hsa04974_genes <- strsplit(kk_results[kk_results$ID == "hsa04974",]$geneID, split = "/")
+Hsa04974_genes <- strsplit(kk_results[kk_results$ID == "hsa04974",]$geneID, split = "/")  # Protein digestion and absorption
 ensEMBL2id_go_ECM <- ensEMBL2id_go
 ensEMBL2id_go_ECM <- subset(ensEMBL2id_go_ECM, ensEMBL2id_go_ECM$go_id == "GO:0022617" | ensEMBL2id_go_ECM$go_id == "GO:0030198" |ensEMBL2id_go_ECM$go_id == "GO:0017090"  )
 ECM_genes <- unique(ensEMBL2id_go_ECM$external_gene_name)
 ECM_genes_all <- c(ECM_genes, unlist(Hsa04974_genes))
 selected_genes <- resSig.ann[resSig.ann$external_gene_name %in% ECM_genes_all,]
-#saveRDS(selected_genes$external_gene_name, "ECM_genes.rds")
+#saveRDS(selected_genes$external_gene_name, "ECM_genes_BlockSex.rds")
 
 
 message("+-------------------------------------------------------------------------------")
@@ -585,10 +756,10 @@ ego_terms_go_wnt$wnt <- grepl("Wnt", ego_terms_go_wnt$name_1006)
 ego_terms_go_wnt <- subset(ego_terms_go_wnt, ego_terms_go_wnt$wnt == TRUE)
 selected_genes2 <- resSig.ann[resSig.ann$external_gene_name %in% ego_terms_go_wnt$external_gene_name,]
 selected_genes2 <- subset(selected_genes2, abs(selected_genes2$log2FoldChange) > 0.6)
-#saveRDS(selected_genes2$external_gene_name, "WNT_signaling_resSig.rds")
+#saveRDS(selected_genes2$external_gene_name, "WNT_signaling_resSig_BlockSex.rds")
 
 message("+-------------------------------------------------------------------------------")
-message("+             Fig. 5b  WNT genes                                                ")
+message("+             Fig. 5b  CC genes                                                ")
 message("+-------------------------------------------------------------------------------")
 
 cellcycle_genes <- ensEMBL2id_go
@@ -597,8 +768,22 @@ cellcycle_genes$cc2 <- grepl("cyclin", cellcycle_genes$name_1006)
 cellcycle_genes <- subset(cellcycle_genes, cellcycle_genes$cc == TRUE | cellcycle_genes$cc2 == TRUE)
 selected_genes2 <- resSig.ann[resSig.ann$external_gene_name %in% cellcycle_genes$external_gene_name,]
 selected_genes2 <- subset(selected_genes2, abs(selected_genes2$log2FoldChange) > 0.6)
-#saveRDS(selected_genes2$external_gene_name, "cell_cycle_genes_resSig.rds")
+#saveRDS(selected_genes2$external_gene_name, "cell_cycle_genes_resSig_BlockSex.rds")
 
+
+
+
+message("+-------------------------------------------------------------------------------")
+message("+             Fig. 5b  Glycolytic genes                                                ")
+message("+-------------------------------------------------------------------------------")
+
+glycolytic_genes <- ensEMBL2id_go
+glycolytic_genes$cc <- grepl("glycolytic", glycolytic_genes$name_1006)
+glycolytic_genes$cc2 <- grepl("glycolysis", glycolytic_genes$name_1006)
+glycolytic_genes <- subset(glycolytic_genes, glycolytic_genes$cc == TRUE | glycolytic_genes$cc2 == TRUE)
+selected_genes2 <- resSig.ann[resSig.ann$external_gene_name %in% glycolytic_genes$external_gene_name,]
+selected_genes2 <- subset(selected_genes2, abs(selected_genes2$log2FoldChange) > 0.6)
+#saveRDS(selected_genes2$external_gene_name, "cell_cycle_genes_resSig_BlockSex.rds")
 
 
 sessionInfo()
