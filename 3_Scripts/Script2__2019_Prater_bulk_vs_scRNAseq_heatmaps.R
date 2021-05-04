@@ -49,7 +49,7 @@ message("+----------------------------------------------------------------------
 ensembl    =  useEnsembl(biomart="ensembl", dataset="hsapiens_gene_ensembl")
 ensEMBL2id <- getBM(attributes=c('ensembl_gene_id', 'external_gene_name', 'entrezgene_id', 'description'), mart = ensembl)          
 ensEMBL2id_go <- getBM(attributes=c('ensembl_gene_id', 'external_gene_name', 'description', 'go_id', 'name_1006' ), mart = ensembl)    
-ensEMBL2id <- unique(ensEMBL2id_go[,-c(1,6,7)])
+ensEMBL2id_go2 <- unique(ensEMBL2id_go[,-c(1,6,7)])
 
 
 message("+-------------------------------------------------------------------------------")
@@ -82,7 +82,12 @@ rld_df_meanCentered_ann <- rld_df_meanCentered_ann[,c(4,2,3)]
 head(rld_df_meanCentered_ann)
 
 
-rld_df_meanCentered_ann <- readRDS("rld_df_meanCentered_ann.Rds")
+rld_df_ann2 <- rld_df_ann[,c(16,2:15)]
+rld_df_meanCentered_ann <- rld_df_ann2[,c(2:15)] - rowMeans(rld_df_ann2[,c(2:15)])   
+rld_df_meanCentered_ann$external_gene_name <- rld_df_ann2$external_gene_name
+rld_df_meanCentered_ann <- rld_df_meanCentered_ann[,c(15,1:14)]
+
+#rld_df_meanCentered_ann <- readRDS("rld_df_meanCentered_ann.Rds")
 GSE89497_mat_means <- readRDS("GSE89497_mat_means.Rds")
 
 resSig.ann <- read.csv("CTR_gjb2_0001_STAR_DESeq2_shrinkage_BlockSex_deseq2_DEGs_padj0.05.csv")
@@ -188,6 +193,7 @@ makeHeatmap <- function(selected_genes, name_of_heatmap, gene_number = 50, by_ce
   if (length(selected_genes) > gene_number )  {
     selected_genes <- selected_genes[1:gene_number]
   }
+  #rld_mat <- rld_df_meanCentered_ann[rld_df_meanCentered_ann$external_gene_name %in% selected_genes,]
   rld_mat <- rld_df_meanCentered_ann[rld_df_meanCentered_ann$external_gene_name %in% selected_genes,]
   rownames(rld_mat) <- rld_mat$external_gene_name
   rld_mat <- rld_mat[,-1]
@@ -227,16 +233,16 @@ makeHeatmap <- function(selected_genes, name_of_heatmap, gene_number = 50, by_ce
   
   
   if (by_cellType == TRUE){
-    ht1 = Heatmap(as.matrix(rld_mat2[,c(1,2)]),  col = f1, name = "Bulk RNA-seq",  row_title = "", column_title = "Bulk RNA-seq", show_row_names = TRUE, heatmap_legend_param = list(title = "Expression (rld)", legend_height = unit(3, "cm"), title_position = "topleft"), cluster_columns = FALSE, cluster_rows = FALSE , width = unit(3, "cm"), row_names_side ="left")
+    ht1 = Heatmap(as.matrix(rld_mat2[,c(1,2)]),  col = f1, name = "Bulk RNA-seq",  row_title = "", column_title = "Bulk RNA-seq", show_row_names = TRUE, heatmap_legend_param = list(title = "Expression", legend_height = unit(3, "cm"), title_position = "topleft"), cluster_columns = FALSE, cluster_rows = FALSE , width = unit(3, "cm"), row_names_side ="left")
   }else{
-    ht1 = Heatmap(rld_mat2[,c(1,2)],  col = f1, name = "Bulk RNA-seq",  row_title = "", column_title = "Bulk RNA-seq", show_row_names = T, heatmap_legend_param = list(title = "Expression (rld)", legend_height = unit(3, "cm"), title_position = "topleft"), cluster_columns = FALSE, width = unit(3, "cm"), row_names_side ="left")
+    ht1 = Heatmap(rld_mat2[],  col = f1, name = "Bulk RNA-seq",  row_title = "", column_title = "Bulk RNA-seq", show_row_names = T, heatmap_legend_param = list(title = "Expression", legend_height = unit(3, "cm"), title_position = "topleft"), cluster_columns = FALSE, width = unit(7, "cm"), row_names_side ="left")
   }  
   
-  ht2 = Heatmap(as.matrix(scRNAseq_mat2),   col = f2, name = "sc RNA-seq", row_title = "", column_title = "sc RNA-seq", show_row_names = FALSE, heatmap_legend_param = list( title = "sc RNA-seq", legend_height = unit(3, "cm"), title_position = "topleft"), cluster_columns = FALSE, width = unit(4, "cm"), column_split = c(rep("08 w",4), "24 w"), show_heatmap_legend = FALSE) 
+  ht2 = Heatmap(as.matrix(scRNAseq_mat2),   col = f2, name = "sc RNA-seq", row_title = "", column_title = "sc RNA-seq", show_row_names = FALSE, heatmap_legend_param = list( title = "sc RNA-seq", legend_height = unit(3, "cm"), title_position = "topleft"), cluster_columns = FALSE, width = unit(2.5, "cm"), column_split = c(rep("08 w",4), "24 w"), show_heatmap_legend = FALSE) 
   ht_list = ht1 + ht2
   
   heatmap_height <- nrow(rld_mat)*0.2+1
-  pdf(paste("Fig_xx_", "ComplexHeatmap_",  name_of_heatmap, ".pdf", sep=""), onefile=FALSE, width=8, height=heatmap_height) 
+  pdf(paste("Fig_xx_", "ComplexHeatmap_",  name_of_heatmap, ".pdf", sep=""), onefile=FALSE, width=9, height=heatmap_height) 
   par(bg=NA)
   draw(ht_list, row_title = " ", row_title_gp = gpar(col = "red"),  column_title = " ", column_title_side = "bottom", gap = unit(1, "cm"))
   dev.off()
@@ -249,7 +255,7 @@ makeHeatmap <- function(selected_genes, name_of_heatmap, gene_number = 50, by_ce
 
 genes_ht_ER <- c("ERP44","ANK1","HSPA5","HERPUD1","KIF2A","FCGR2B","DNAJB11","DNAJC3","TUSC3","AREG","MAN1C1","SDF2L1","DNAJB9","PDIA6","MANF","HYOU1","KIF5A","TGFA","SPTA1","HSP90B1","PDIA3","HSPA6","GOLT1A","CALR","MCFD2","SSR4","GAS6","PROS1","PDIA2","LRRK2","SERPINA1","ERO1A","MAN1A2","SCAMP5","FICD","XBP1","LMAN1", "ERN1", "XBP1","EIF2AK3", "EDEM2", "ANK2" ) 
 genes_ht_secret <- c("SLC22A16","ABCC8","CD22","IGF1","FCGR2B","EDN1","TLR8","TNFSF13B","RGCC","PIK3CG","C5","ADTRP","SLC16A10","PLA2G4A","INHBA","INHA","CCR7","WNK4","GAD1","C5AR2","CGA","TLR2","FGF7","FCGR2A","ADRA2A","MCOLN2","SYN2","TNFRSF14","APOA2","FCGR3B","SLC30A8","TLR1","LEP","MCTP1","NLRP10","MAFA","C5AR1","SCAMP5","CR1","ANG","CARD17") 
-genes_ht_oxy <- c("TBXAS1","ADCY2","EDN1","ICAM1","RGCC","TRPA1","CCL2","NCF2","CCR7","KLF2","CBFA2T3","HBZ","IL10","TLR2","CH25H","CYP1A1","CYP1A2","PKLR","KCNMB1","GUCY1A2","KCNMA1","NCF1","GDNF","TLR6","LEP","APOLD1","PENK","MAFA","CYP2R1","MAPT","P2RX2","DPYD","HBG2","SLC30A10","HIF3A","ANG","COX4I2","SOD3","ACADL", "LOX", "CAT") 
+genes_ht_oxy <- c("TBXAS1","ADCY2","EDN1","ICAM1","RGCC","TRPA1","CCL2","NCF2","CCR7","KLF2","CBFA2T3","HBZ","IL10","TLR2","CH25H","CYP1A1","CYP1A2","PKLR","KCNMB1","GUCY1A2","KCNMA1","NCF1","GDNF","TLR6","LEP","APOLD1","PENK","MAFA","CYP2R1","MAPT","P2RX2","DPYD","HBG2","SLC30A10","HIF3A","ANG","COX4I2","SOD3","ACADL", "LOX") 
 genes_ht_WNT <-c("DKK3","LRP6","TNRC6C","PORCN","FGF10","WNT2","WNT5B","TBX18","IGFBP2","SDC1","WNT4","PDE6B","WNT10A","TLR2","PLCB2","LEF1","NKD1","ARRB2","IGFBP4","NKD2","DCDC2","RSPO3","DRD2","PTPRO","WNT3A","LYPD6","APCDD1","DKK2","EDA","PRKAA2","ZEB2","CTNND2","WNT10B","CDH2","SOX7","LRRK2","PSMB8","PSMB9", "WNT9A", "RYR2", "CCND1",  "RECK","SCEL","APOE","NR4A2","FOLR1")         
 genes_ht_cellcycl <-c("CDK14","MLXIPL","FHL1","FOXC1","DUSP13","PTPRC","ABCB1","CDKL1","FAM83D","RGCC","TUBB4A","LILRB1","RASSF4","CCL2","HYAL1","PLAGL1","INHBA","ESX1","INHA","IL10","CGREF1","CYP1A1","MAPK4","PRKACB","HMGA2","PPP1R1C","PPP2R2B","PYHIN1","GEM","GFI1B","FAM107A","AFAP1L2","WNT10B","LEP","RNF212","GAS6","EVI2B","PSMB8","AIF1","SPDYC","GMNC","PSMB9","TUBB3","SMIM22","TGFB1", "GKN1") 
 genes_ht_TFs <-c("MLXIPL","FOXC1","HES2","GATA1","MYEF2","KLF1","TFEC","LHX6","ZBTB16","TBX18","HAND1","TFAP2E","KLF7","TCF21","KLF9","HOXC13","SPDEF","TCF15","KLF2","MYOD1","CASZ1","EHF","HEYL","STAT4","RORC","SCML4","ZNF157","NFIB","HMGA2","NPAS3","EBF1","GFI1B","SOX14","EMX2","SOX7","BNC2","MSC","TSHZ2","MAFA","MYT1","SOX18","FOXD1","TCF4","PBX4","MEF2C","GPER1") 
