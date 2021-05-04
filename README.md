@@ -11,7 +11,7 @@ Principal component analysis (PCA) was performed on rlog-transformed count data 
 Gene Ontology and Kegg pathway analysis was performed using clusterProfiler package (v.3.10.1). 
 The data matrix for scRNA-seq data were obtained from the Wang lab (GEO accession number GSE89497).  
 Heatmaps were generated with ‘ComplexHeatmap' R package (v 1.20.0). Karyoplot was generated with karyoploteR (v1.8.8).
-The RNA-sequencing data is accessible through the ArrayExpress series accession number:  E-MTAB-6683 (https://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-xxxx). 
+The RNA-sequencing data is accessible through the ArrayExpress series accession number:  E-MTAB-9203 (https://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-9203). 
 
 
 ### DNA Methylation Analysis
