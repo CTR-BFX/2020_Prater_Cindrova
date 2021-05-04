@@ -32,7 +32,7 @@ In total, 750150 probes on the array passed the filtering and QC steps.
 The BMIQ4 method was used to normalise the two probe types (I and II) present on the array. 
 Beta methylation values from the EPIC array range from 0 (unmethylated) to 1 (methylated) and are equivalent of percentage methylation. 
 
-EPIC methylation array data have been deposited in the ArrayExpress database at EMBL-EBI under accession number E-MTAB-XXXX (https://www.ebi.ac.uk/arrayexpress/experiments/E-MTABXXXX). 
+EPIC methylation array data have been deposited in the ArrayExpress database at EMBL-EBI under accession number E-MTAB-9312 (https://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-9312). 
 
 
 ### Samples
