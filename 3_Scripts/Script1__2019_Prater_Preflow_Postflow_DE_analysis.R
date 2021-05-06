@@ -819,7 +819,6 @@ exprMatr_DEG <- exprMatr[rownames(exprMatr) %in%  DEGs,]
 #TF_genes <- as.character(TF_db[TF_db$Gene_Name %in%  DEGs, ]$Gene_Name)
 TF_genes <- unique(motifAnnotations_hgnc$TF)[unique(motifAnnotations_hgnc$TF) %in%  DEGs ]
 
-#weightMat <- GENIE3(as.matrix(exprMatr_DEG), regulators =  as.character(TF_genes), nCores = 1, verbose = TRUE )
 weightMat <- GENIE3(as.matrix(exprMatr_DEG), regulators =  as.character(rownames(exprMatr_DEG)), nCores = 1, verbose = TRUE )
 
 # Tree method: RF
@@ -832,17 +831,11 @@ weightMat[1:5,1:5]
 
 # Get the list of the regulatory links
 #You can obtain the list of all the regulatory links (from most likely to least likely) with this command:
-  
-#linkList_Preflow <- getLinkList(weightMat[,c(1:8)]) # reportMax=5 , threshold=0.1
-#linkList_Postflow <- getLinkList(weightMat[,c(9:14)]) # reportMax=5 , threshold=0.1
-
 linkList <- getLinkList(weightMat, threshold=0.05) # reportMax=5 , threshold=0.1
 edge_listsi <- linkList[!duplicated(linkList),]
 
-#dim(linkList_Preflow)
-#dim(linkList_Postflow)
 dim(linkList)
-## 
+ 
 head(linkList)
 ##   regulatoryGene targetGene    weight
 #1         HOXC13    RPL3P12 0.1152300
@@ -854,23 +847,6 @@ head(linkList)
 linkList_0.07 <- linkList[linkList$weight > 0.07,]
 linkList_0.08 <- linkList[linkList$weight > 0.08,]
 linkList_0.05 <- linkList[linkList$weight > 0.05,]
-#genes_for_string <- as.data.frame(unique(c(as.character(linkList_0.08$regulatoryGene), as.character(linkList_0.08$targetGene))))
-#colnames(genes_for_string) <- "genie_genes"
-#genes_for_string$gene <- genes_for_string$genie_genes
-#genes_for_string <- genes_for_string$gene
-#write.csv(as.data.frame(genes_for_string), "genes_for_string.csv", quote = F)
-
-#Important note on the interpretation of the weights
-#The weights of the links returned by GENIE3() do not have any statistical meaning and only provide a way to rank the regulatory links. There is therefore no standard threshold value, and caution must be taken when choosing one.
-
-# maybe heatmap??? 
-
-
-
-#enrichR_res <- enrichr(as.character(genes_for_string), databases = c("KEGG_2019_Human", "WikiPathways_2019_Human","Reactome_2016",  "TF_Perturbations_Followed_by_Expression", "TRRUST_Transcription_Factors_2019","Chromosome_Location", "Epigenomics_Roadmap_HM_ChIP-seq", "BioCarta_2016","InterPro_Domains_2019", "Pfam_Domains_2019","Elsevier_Pathway_Collection","GO_Biological_Process_2018", "GO_Cellular_Component_2018", "GO_Molecular_Function_2018","Enrichr_Submissions_TF-Gene_Coocurrence"))
-
-#enrichr_res_c <- enrichR_res$GO_Biological_Process_2018
-#enrichr_res_c <- enrichr_res_c[enrichr_res_c$Adjusted.P.value < 0.05,]
 
 weightMat[1:5, 1:5]
 
@@ -941,10 +917,6 @@ motifEnrich_CBX3_TSS <- unlist(strsplit( motifEnrichmentTable_wGenesTSS[motifEnr
 motifEnrich_lc_BCL6_tss <- unlist(strsplit( motifEnrichmentTable_wGenesTSS[motifEnrichmentTable_wGenesTSS$motif == "transfac_pro__M09104",]$enrichedGenes, split = ";" ))
 
 
-
-# motifEnrich_lc_BCL6_tss
-# motifEnrich_CBX3
-
 motifEnrich_genes <- motifEnrich_CBX3
 
 #motifEnrich_genes <- DEG_CBX3$external_gene_name[DEG_CBX3$external_gene_name %in% DEG_BCL6_tss$external_gene_name] # 75
@@ -986,14 +958,9 @@ length(DEG_CBX3tss[DEG_CBX3tss$external_gene_name %in% DEG_BCL6_tss$external_gen
 
 
 
-#motifEnrich_genes <- DEG_CBX3$external_gene_name[DEG_CBX3$external_gene_name %in% DEG_BCL6_tss$external_gene_name] # 75
-#motifEnrich_genes <- DEG_CBX3tss$external_gene_name[DEG_CBX3tss$external_gene_name %in% DEG_BCL6_tss$external_gene_name] # 240
-
-
 enrichR_res <- enrichr(motifEnrich_genes, databases = c("KEGG_2019_Human", "WikiPathways_2019_Human","Reactome_2016",  "TF_Perturbations_Followed_by_Expression", "TRRUST_Transcription_Factors_2019","Chromosome_Location", "Epigenomics_Roadmap_HM_ChIP-seq", "BioCarta_2016","InterPro_Domains_2019", "Pfam_Domains_2019","Elsevier_Pathway_Collection","GO_Biological_Process_2018", "GO_Cellular_Component_2018", "GO_Molecular_Function_2018","Enrichr_Submissions_TF-Gene_Coocurrence"))
 
 
-#enrichR_resTSS <- enrichR_res
 
 enrichr_Wiki <- enrichR_res$WikiPathways_2019_Human
 enrichr_Wiki <- enrichr_Wiki[enrichr_Wiki$Adjusted.P.value < 0.05,]
@@ -1353,7 +1320,6 @@ sample_annot$Class <- gsub( "Second_trimester.*", "ST",sample_annot$Class)
 # run cemitool with sample annotation
 
 #expr0 <- expr0[rownames(expr0) %in% resSig.ann$external_gene_name,]
-
 #cem <- readRDS("cem.Rds")
 
 head(sample_annot)
@@ -1460,242 +1426,6 @@ modules_list <- split(modules$genes, modules$modules)
 # 
 
 
-
-
-
-
-message("+            rTRM                   ")
-
-library(rTRM)
-browseVignettes("rTRM")
-
-pwm = getMatrices()
-head(pwm, 1)
-
-ann = getAnnotations()
-head(ann)
-
-#To get map of TFs to genes:
-map = getMaps()
-head(map)
-
-#interactome data:: check statistics about the network.
-biogrid_hs()
-
-# load human PPI network:
-data(biogrid_hs)
-#data(biogrid_mm)
-
-# for protein - protein interactions
-library(PSICQUIC)
-psicquic <- PSICQUIC()
-providers(psicquic)
-
-# obtain BioGrid human PPIs (as data.frame):
-tbl = interactions(psicquic, species = "9606", provider = "BioGrid")
-#tbl = interactions(psicquic, species = "10090", provider = "BioGrid") # mouse
-
-# the target and source node information needs to be polished (i.e. must be
-# # Entrez gene id only)
-biogrid_hs = data.frame(source = tbl$A, target = tbl$B)
-biogrid_hs$source = sub(".*locuslink:(.*)*", "\\1", biogrid_hs$source)
-
-biogrid_hs$target = sub(".*locuslink:(.*)*", "\\1", biogrid_hs$target)
- # create graph.
-library(igraph)
-biogrid_hs = graph.data.frame(biogrid_hs, directed = FALSE)
-biogrid_hs = simplify(biogrid_hs)
-
-# annotate with symbols.
-library(org.Hs.eg.db)
-#library(org.Mm.eg.db)
-(biogrid_hs)$label = select(org.Hs.eg.db, keys = V(biogrid_hs)$name, columns = c("SYMBOL"))$SYMBOL
-#(biogrid_hs)$label = select(org.Mm.eg.db, keys = V(biogrid_hs)$name, columns = c("SYMBOL"))$SYMBOL
-
-
-# read motif enrichment results.
-motif_file = system.file("extra/sox2_motif_list.rda", package = "rTRM")
-load(motif_file)
-length(motif_list)
-#[1] 177
-head(motif_list)
-#[1] "MA0039.2" "MA0071.1" "MA0075.1" "MA0077.1" "MA0078.1" "MA0112.2"
-
-# get the corresponding gene.
-tfs_list = getOrthologFromMatrix(motif_list, organism = "mouse")
-tfs_list = unique(unlist(tfs_list, use.names = FALSE))
-length(tfs_list)
-#[1] 98
-head(tfs_list)
-#[1] "18609" "20682" "13983" "20665" "18291" "18227"
-
-# load expression data.
-eg_esc_file = system.file("extra/ESC-expressed.txt", package = "rTRM")
-eg_esc = scan(eg_esc_file, what = "")
-length(eg_esc)
-#[1] 8734
-head(eg_esc)
-#[1] "100008567" "100017" "100019" "100037258" "100038489" "100039781"
-tfs_list_esc = tfs_list[tfs_list %in% eg_esc]
-length(tfs_list_esc)
-#[1] 22
-head(tfs_list_esc)
-#[1] "26380" "18999" "20674" "16600" "26379" "13984"
-
-#Next, we load the PPI network and filter out potential degree outliers and proteins not expressed in the paired expression data.
-# load and process PPI data.
-biogrid_hs()
-
-#Use data(biogrid mm) to load it
-data(biogrid_mm)
-ppi = biogrid_mm
-vcount(ppi)
-#[1] 5315
-ecount(ppi)
-#[1] 11695
-# remove outliers.
-f = c("Ubc", "Sumo1", "Sumo2", "Sumo3")
-f = select(org.Mm.eg.db, keys = f, columns = "ENTREZID", keytype = "SYMBOL")$ENTREZID
-#’select()’ returned 1:1 mapping between keys and columns
-
-f
-# "22190" "22218" "170930" "20610"
-ppi = removeVertices(ppi, f)
-vcount(ppi)
-#[1] 4984
-ecount(ppi)
-#[1] 11081
-# filter by expression.
-ppi_esc = induced.subgraph(ppi, V(ppi)[name %in% eg_esc])
-vcount(ppi_esc)
-#[1] 3109
-ecount(ppi_esc)
-#[1] 4889
-# ensure a single component.
-#  7
-ppi_esc = getLargestComp(ppi_esc)
-vcount(ppi_esc)
-#[1] 2576
-
-
-## -----------------------------------------------------------------------------
-# define target.
-target = select(org.Mm.eg.db,keys="Sox2",columns="ENTREZID",keytype="SYMBOL")$ENTREZID
-target
-
-# find TRM.
-s = findTRM(ppi_esc, target, tfs_list_esc, method = "nsa", max.bridge = 1)
-vcount(s)
-ecount(s)
-
-## ----fig.cap = "Sox2 specific TRM in ESCs."-----------------------------------
-# generate layout (order by cluster, then label)
-cl = getConcentricList(s, target, tfs_list_esc)
-l = layout.concentric(s, cl, order = "label")
-
-# plot TRM.
-plotTRM(s, layout = l, vertex.cex = 15, label.cex = .8)
-plotTRMlegend(s, title = "ESC Sox2 TRM", cex = .8)
-
-
-
-
-
-
-
-
-library(rTRM)
-library(BSgenome.Mmusculus.UCSC.mm8.masked) # Sox2 peaks found against mm8
-library(PWMEnrich)
-registerCoresPWMEnrich(1) # register number of cores for parallelization in PWMEnrich
-library(MotifDb)
-
-# select mouse PWMs:
-sel.mm = values(MotifDb)$organism %in% c("Mmusculus")
-pwm.mm = MotifDb[sel.mm]
-
-## -----------------------------------------------------------------------------
-# generate logn background model of PWMs:
-p = as.list(pwm.mm)
-p = lapply(p, function(x) round(x * 100))
-p = lapply(p, function(x) t(apply(x, 1, as.integer)))
-
-## ----eval=FALSE---------------------------------------------------------------
-#  pwm_logn = makeBackground(p, Mmusculus, type = "logn")
-
-## ----echo=FALSE---------------------------------------------------------------
-load(system.file("extra/pwm_mm_logn.rda", package = "rTRM"))
-
-## -----------------------------------------------------------------------------
-sox2_bed = read.table(system.file("extra/ESC_Sox2_peaks.txt", package = "rTRM"))
-
-colnames(sox2_bed) = c("chr", "start", "end")
-
-sox2_seq = getSequencesFromGenome(sox2_bed, Mmusculus, append.id="Sox2")
-# PWMEnrich throws an error if the sequences are shorter than the motifs so we filter those sequences.
-min.width = max(sapply(p, ncol))
-sox2_seq_filter = sox2_seq[width(sox2_seq) >= min.width]
-
-## ----eval=FALSE---------------------------------------------------------------
-#  # find enrichment:
-#  sox2_enr = motifEnrichment(sox2_seq_filter, pwms=pwm_logn, group.only=TRUE)
-
-## ----echo=FALSE---------------------------------------------------------------
-load(system.file("extra/sox2_enr.rda", package = "rTRM"))
-
-## ----fig.cap="Density of log2(raw.score) for group. The selected cutoff is indicated with a red line."----
-res = groupReport(sox2_enr)
-
-plot(density(res$raw.score),main="",log="x",xlab="log(raw.score)")
-abline(v=log2(5),col="red")
-mtext(text="log2(5)",at=log2(5),side=3,cex=.8,col="red")
-
-res.gene = unique(values(MotifDb[res$id[res$raw.score > 5]])$geneId)
-res.gene = unique(na.omit(res.gene))
-
-## ----fig.cap="Sox2 TRM identified using PWMEnrich for the motif enrichment."----
-data(biogrid_mm)
-ppi = biogrid_mm
-vcount(ppi)
-ecount(ppi)
-
-f = c("Ubc", "Sumo1", "Sumo2", "Sumo3")
-f=select(org.Mm.eg.db,keys=f,columns="ENTREZID",keytype="SYMBOL")$ENTREZID
-ppi = removeVertices(ppi, f)
-vcount(ppi)
-ecount(ppi)
-
-# filter by expression.
-eg_esc = scan(system.file("extra/ESC-expressed.txt", package = "rTRM"), what = "")
-ppi_esc = induced.subgraph(ppi, V(ppi)[ name %in% eg_esc ])
-vcount(ppi_esc)
-ecount(ppi_esc)
-
-# ensure a single component.
-ppi_esc = getLargestComp(ppi_esc)
-vcount(ppi_esc)
-ecount(ppi_esc)
-
-sox2.gene = select(org.Mm.eg.db,keys="Sox2",columns="ENTREZID",keytype="SYMBOL")$ENTREZID
-sox2_trm = findTRM(ppi_esc, target=sox2.gene, query = res.gene)
-
-cl = getConcentricList(sox2_trm, t=sox2.gene,e=res.gene)
-l = layout.concentric(sox2_trm, concentric=cl, order="label")
-plotTRM(sox2_trm, layout = l, vertex.cex = 15, label.cex = .8)
-plotTRMlegend(sox2_trm, title = "ESC Sox2 TRM", cex = .8)
-
-## ----fig.cap="Similarity between the TRMs predicted using motif enrichment information from PWMEnrich and HOMER."----
-m=getSimilarityMatrix(list(PWMEnrich=sox2_trm,HOMER=s))
-m
-d=as.data.frame.table(m)
-g = ggplot(d, aes(x = Var1, y = Var2, fill = Freq))
-g + geom_tile() + scale_fill_gradient2(limit = c(0, 100), low = "white", mid = "darkblue", high = "orange", guide = guide_legend("similarity", reverse=TRUE), midpoint = 50) + xlab(NULL) + ylab(NULL) + theme(aspect.ratio = 1, axis.text.x=element_text(angle = 90, vjust = .5, hjust = 1))
-
-
-## ----fig.width=2.5,fig.height=2.5,fig.cap="Sox2 TRM obtained with PWMEnrich workflow and layout.concentric is shown in the left. Same TRM with layout.arc is shown in the right."----
-plotTRM(sox2_trm, layout = l, vertex.cex = 15, label.cex = .7)
-l=layout.arc(sox2_trm,target=sox2.gene,query=res.gene)
-plotTRM(sox2_trm, layout=l,vertex.cex=15,label.cex=.7)
 
 
 
