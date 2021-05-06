@@ -37,9 +37,9 @@ l2fc          <- 1
 col_1st       <- "firebrick2"
 col_2nd       <- "steelblue3"
 
-Base.dir      <- "/Users/malwina/Documents/CTR-Groups/Graham_Burton/CTR_gjb2_0001/STAR/"
+Base.dir      <- "/Users/malwinaprater/Documents/CTR-Groups/Graham_Burton/CTR_gjb2_0001/STAR/"
 setwd(Base.dir)
-Res.dir      <- "/Users/malwina/Documents/CTR-Groups/Graham_Burton/CTR_gjb2_0001/STAR/BlockSex"
+Res.dir      <- "/Users/malwinaprater/Documents/CTR-Groups/Graham_Burton/CTR_gjb2_0001/STAR/BlockSex"
 
 message("+-------------------------------------------------------------------------------")
 message("+                       Prepare sample table                                    ")
@@ -237,10 +237,6 @@ Supp_Fig_1_B_C  <-  plot_grid(Supp_Fig_1_B, Supp_Fig_1_C_hclust, labels=c("B", "
 message("+-------------------------------------------------------------------------------")
 message("+                                volcano plot                                   ")
 message("+-------------------------------------------------------------------------------")
-#  2nd: "steelblue3"
-#  1st: "firebrick2"
-
-#resdata_ann
 
 data <- data.frame(gene = results.df$ensembl_gene_id,
                    symbol = results.df$external_gene_name,
@@ -269,8 +265,6 @@ colored <- ggplot(data, aes(x = lfc, y = pvalue)) +
 
 Fig_1_volcano <- colored + geom_text_repel(data=subset(data, abs(lfc) > 3 & padj < 0.00000001), mapping = aes(label = symbol), size = 4, color = 'black', box.padding = unit(0.3, "lines"), point.padding = unit(0.5, "lines"))
 
-Fig_1_volcano
-
 pdf(paste("Fig_1b_volcano", Project,  "corrLabs.pdf", sep="_"), onefile=FALSE, width=7, height=7) 
 par(bg=NA)
 Fig_1_volcano
@@ -282,7 +276,6 @@ message("+                             Starting GO/KEGG                         
 message("+-------------------------------------------------------------------------------")
 
 RESULTS_1 <- subset(resSig.ann, abs(resSig.ann$log2FoldChange) > l2fc & resSig.ann$padj < significance)
-#RESULTS_0.6 <- subset(results.df, abs(results.df$log2FoldChange) > 0.6 & results.df$padj < significance)
 resdata_simplified <- resdata_ann
 resdata_simplified$mean_1st <- rowMeans(resdata_simplified[,c(8:15)])
 resdata_simplified$mean_2nd <- rowMeans(resdata_simplified[,c(16:21)])
@@ -291,78 +284,6 @@ resdata_simplified <- resdata_simplified[,c(1,2,3,7,22:25)]
 message("+-------------------------------------------------------------------------------")
 message("+                                  enrichKegg                                   ")
 message("+-------------------------------------------------------------------------------")
-
-library("enrichR")
-enrichR_DB <- as.data.frame(listEnrichrDbs())
-
-enrichR_res <- enrichr(RESULTS_1[RESULTS_1$log2FoldChange > 0,]$external_gene_name, databases = c("KEGG_2019_Human", "WikiPathways_2019_Human","Reactome_2016",  "TF_Perturbations_Followed_by_Expression", "TRRUST_Transcription_Factors_2019","Chromosome_Location", "Epigenomics_Roadmap_HM_ChIP-seq", "BioCarta_2016","InterPro_Domains_2019", "Pfam_Domains_2019","Elsevier_Pathway_Collection","GO_Biological_Process_2018", "GO_Cellular_Component_2018", "GO_Molecular_Function_2018","Enrichr_Submissions_TF-Gene_Coocurrence"))
-
-TF_gene_cooc_up <- enrichR_res$`Enrichr_Submissions_TF-Gene_Coocurrence`
-TF_gene_cooc_up <- TF_gene_cooc_up[TF_gene_cooc_up$Adjusted.P.value < 0.05,]
-Wiki_enrichr_up <- enrichR_res$WikiPathways_2019_Human
-Wiki_enrichr_up <- Wiki_enrichr_up[Wiki_enrichr_up$Adjusted.P.value < 0.1,]
-TRUST_enrichr_up <- enrichR_res$TRRUST_Transcription_Factors_2019
-TRUST_enrichr_up <- TRUST_enrichr_up[TRUST_enrichr_up$Adjusted.P.value < 0.1,]
-TF_perturb_enrichr_up <- enrichR_res$TF_Perturbations_Followed_by_Expression
-TF_perturb_enrichr_up <- TF_perturb_enrichr_up[TF_perturb_enrichr_up$Adjusted.P.value < 0.1,]
-Reactome_enrichr_up <- enrichR_res$Reactome_2016
-Reactome_enrichr_up <- Reactome_enrichr_up[Reactome_enrichr_up$Adjusted.P.value < 0.1,]
-Chromosome_enrichr_up <- enrichR_res$Chromosome_Location
-Chromosome_enrichr_up <- Chromosome_enrichr_up[Chromosome_enrichr_up$Adjusted.P.value < 0.1,]
-biocarta_enrichr_up <- enrichR_res$BioCarta_2016
-biocarta_enrichr_up <- biocarta_enrichr_up[biocarta_enrichr_up$Adjusted.P.value < 0.1,]
-GOBP_enrichr_up <- enrichR_res$GO_Biological_Process_2018
-GOBP_enrichr_up <- GOBP_enrichr_up[GOBP_enrichr_up$Adjusted.P.value < 0.1,]
-GOMF_enrichr_up <- enrichR_res$GO_Molecular_Function_2018
-GOMF_enrichr_up <- GOMF_enrichr_up[GOMF_enrichr_up$Adjusted.P.value < 0.1,]
-GOCC_enrichr_up <- enrichR_res$GO_Cellular_Component_2018
-GOCC_enrichr_up <- GOCC_enrichr_up[GOCC_enrichr_up$Adjusted.P.value < 0.1,]
-
-enrichR_res <- enrichr(RESULTS_1[RESULTS_1$log2FoldChange < 0,]$external_gene_name, databases = c("KEGG_2019_Human", "WikiPathways_2019_Human","Reactome_2016",  "TF_Perturbations_Followed_by_Expression", "TRRUST_Transcription_Factors_2019","Chromosome_Location", "Epigenomics_Roadmap_HM_ChIP-seq", "BioCarta_2016","InterPro_Domains_2019", "Pfam_Domains_2019","Elsevier_Pathway_Collection","GO_Biological_Process_2018", "GO_Cellular_Component_2018", "GO_Molecular_Function_2018","Enrichr_Submissions_TF-Gene_Coocurrence"))
-
-TF_gene_cooc_down <- enrichR_res$`Enrichr_Submissions_TF-Gene_Coocurrence`
-TF_gene_cooc_down <- TF_gene_cooc_down[TF_gene_cooc_down$Adjusted.P.value < 0.1,]
-Wiki_enrichr_down <- enrichR_res$WikiPathways_2019_Human
-Wiki_enrichr_down <- Wiki_enrichr_down[Wiki_enrichr_down$Adjusted.P.value < 0.1,]
-TRUST_enrichr_down <- enrichR_res$TRRUST_Transcription_Factors_2019
-TRUST_enrichr_down <- TRUST_enrichr_down[TRUST_enrichr_down$Adjusted.P.value < 0.1,]
-TF_perturb_enrichr_down <- enrichR_res$TF_Perturbations_Followed_by_Expression
-TF_perturb_enrichr_down <- TF_perturb_enrichr_down[TF_perturb_enrichr_down$Adjusted.P.value < 0.1,]
-Reactome_enrichr_down <- enrichR_res$Reactome_2016
-Reactome_enrichr_down <- Reactome_enrichr_down[Reactome_enrichr_down$Adjusted.P.value < 0.1,]
-Chromosome_enrichr_down <- enrichR_res$Chromosome_Location
-Chromosome_enrichr_down <- Chromosome_enrichr_down[Chromosome_enrichr_down$Adjusted.P.value < 0.1,]
-biocarta_enrichr_down <- enrichR_res$BioCarta_2016
-biocarta_enrichr_down <- biocarta_enrichr_down[biocarta_enrichr_down$Adjusted.P.value < 0.1,]
-GOBP_enrichr_down <- enrichR_res$GO_Biological_Process_2018
-GOBP_enrichr_down <- GOBP_enrichr_down[GOBP_enrichr_down$Adjusted.P.value < 0.1,]
-GOMF_enrichr_down <- enrichR_res$GO_Molecular_Function_2018
-GOMF_enrichr_down <- GOMF_enrichr_down[GOMF_enrichr_down$Adjusted.P.value < 0.1,]
-GOCC_enrichr_down <- enrichR_res$GO_Cellular_Component_2018
-GOCC_enrichr_down <- GOCC_enrichr_down[GOCC_enrichr_down$Adjusted.P.value < 0.1,]
-
-#write.csv(biocarta_enrichr_up, "biocarta_enrichr_up.csv")
-#write.csv(GOBP_enrichr_up, "GOBP_enrichr_up.csv")
-#write.csv(GOCC_enrichr_up, "GOCC_enrichr_up.csv")
-#write.csv(GOMF_enrichr_up, "GOMF_enrichr_up.csv")
-#write.csv(Kegg_enrichr_up, "Kegg_enrichr_up.csv")
-#write.csv(Reactome_enrichr_up, "Reactome_enrichr_up.csv")
-#write.csv(TF_perturb_enrichr_up, "TF_Perturbations_Followed_by_Expression_up.csv")
-#write.csv(TF_perturb_enrichr_down, "TF_Perturbations_Followed_by_Expression_down.csv")
-#write.csv(Wiki_enrichr_up, "Wiki_enrichr_up.csv")
-#write.csv(TRUST_enrichr_up, "TRRUST_Transcription_Factors_2019_up.csv")
-
-TF_prtb_up   <- unique(gsub(" .*", "", TF_perturb_enrichr_up$Term))
-TF_prtb_down <- unique(gsub(" .*", "", TF_perturb_enrichr_down$Term))
-TF_prtb_up <- TF_prtb_up[TF_prtb_up %in% RESULTS_1$external_gene_name]
-TF_prtb_down <- TF_prtb_down[TF_prtb_down %in% RESULTS_1$external_gene_name]
-TF_perturb_enrichr_up$Significant <- ifelse(gsub(" .*", "", TF_perturb_enrichr_up$Term) %in% TF_prtb_up, "yes", "no")
-TF_perturb_enrichr_down$Significant <- ifelse(gsub(" .*", "", TF_perturb_enrichr_down$Term) %in% TF_prtb_down, "yes", "no")
-TF_perturb_enrichr_up <- subset(TF_perturb_enrichr_up, TF_perturb_enrichr_up$Significant == "yes")
-TF_perturb_enrichr_up$TF <- gsub(" .*", "", TF_perturb_enrichr_up$Term)
-#write.csv(TF_perturb_enrichr_up, "TF_perturb_enrichr_up.csv")
-TF_perturb_enrichr_up[TF_perturb_enrichr_up$TF == "HMGA2",]$Genes
-TF_perturb_enrichr_up[TF_perturb_enrichr_up$TF == "HMGA2",]$Term
 
 Kegg_genes <- na.omit(RESULTS_1)
 head(Kegg_genes)
@@ -387,8 +308,6 @@ kk_res_up$direction <- "up"
 
 
 kk_results <- rbind(kk_res_up, kk_res_down)
-#write.csv(kk_results, "kk_results.csv")
-
 
 selected_kegg <- c("hsa04514" ,"hsa04060", "hsa04022",  "hsa04015", "hsa04141",  "hsa04921", "hsa04062", "hsa04350", "hsa04270", "hsa04010","hsa04911" ,"hsa03320" ,"hsa04918" ,"hsa00510",  "hsa04923", "hsa02010", "hsa04310", "hsa04141", "hsa04151", "hsa04072","hsa04020",  "hsa04512", "hsa04915", "hsa00140","hsa04928","hsa04612", "hsa04141",  "hsa05320", "hsa04371")   # "hsa04913","hsa04929",
 
@@ -441,15 +360,11 @@ for (i in 1:nrow(enrichr_biocart)){
 enrichr_biocart$genes_UP <- as.numeric(list_up)
 enrichr_biocart$genes_DOWN <- as.numeric(list_down)
 enrichr_biocart$genes_DOWN <- -enrichr_biocart$genes_DOWN
-#enrichr_biocart_molten <- melt(enrichr_biocart[,c(1,2,6,7,11:12)], id.vars=c("ID","Description","p.adjust", "qvalue") )
-#enrichr_biocart_molten$Term <- gsub( "Parathyroid hormone synthesis, secretion and action", "Parathyroid hormone synth., secr., action", enrichKegg_molten$Description)
 
 
 p_biocarta <- ggplot(enrichr_biocart, aes(x=reorder(Description, -Adjusted.P.value), y=as.numeric(genes_UP))) + geom_bar(stat="identity", aes(alpha = Combined.Score) ,fill = col_2nd) +
   coord_flip() +  xlab("Biocarta 2016") +
-  #scale_fill_manual( values = c(col_2nd)) +  
   ylab("Gene count") +
-  #ylim(-max(abs(enrichKegg_molten$genes_UP)), max(abs(enrichKegg_molten$genes_UP)))+
   theme(legend.position = "none") +  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   scale_alpha_continuous( range = c(0.5, 1))
 
@@ -482,8 +397,6 @@ gsecc_df <- as.data.frame(gsego_cc)
 gsebp_df <- as.data.frame(gsego_bp)
 gsemf_df <- as.data.frame(gsego_mf)
 
-
-
 # GO over-representation test
 ego_bp <- enrichGO(gene = gene, universe = bkcg_genes, OrgDb = org.Hs.eg.db, ont = "BP",  pAdjustMethod = "BH", pvalueCutoff  = 0.05, qvalueCutoff  = 0.05, readable      = TRUE)
 ego_mf <- enrichGO(gene = gene, universe = bkcg_genes, OrgDb = org.Hs.eg.db, ont = "MF",  pAdjustMethod = "BH", pvalueCutoff  = 0.05, qvalueCutoff  = 0.05, readable      = TRUE)
@@ -498,11 +411,6 @@ ego_cc_df$category <- "CC"
 
 ego <- rbind(ego_bp_df, ego_cc_df, ego_mf_df )
 head(ego)
-
-
-#write.csv(ego_bp_df, "Prater2020_GO_BP_resSig_log2fc1.csv")
-#write.csv(ego_mf_df, "Prater2020_GO_MF_resSig_log2fc1.csv")
-#write.csv(ego_cc_df, "Prater2020_GO_CC_resSig_log2fc1.csv")
 
 
 message("+-------------------------------------------------------------------------------")
